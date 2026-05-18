@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>This Is Our Story | Interactive Archive</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #0b0e11;
+            --card-bg: #161b22;
+            --accent-gold: #c5a059;
+            --text-main: #e0e0e0;
+            --text-muted: #8b949e;
+            --border-glow: rgba(197, 160, 89, 0.2);
+            --danger-red: #8b0000;
+        }
+
+        * { box-sizing: border-box; transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            overflow-x: hidden;
+            /* Side Decorations: Subdued frame for the content */
+            border-left: 15px solid #000;
+            border-right: 15px solid #000;
+        }
+
+        /* Top Decoration: Subtle gold accent */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; right: 0; height: 5px;
+            background: linear-gradient(90deg, transparent, var(--accent-gold), transparent);
+            z-index: 2000;
+        }
+
+        /* Parallax Hero Header */
+        header {
+            height: 50vh;
+            background: linear-gradient(rgba(11, 14, 17, 0.7), var(--bg-color)), 
+                        url('https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=1500&auto=format&fit=crop');
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 1px solid var(--border-glow);
+        }
+
+        header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 4rem;
+            margin: 0;
+            color: #fff;
+            text-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            letter-spacing: 3px;
+        }
+
+        /* Interactive Navigation with Blur */
+        nav {
+            background-color: rgba(10, 14, 20, 0.95);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            border-bottom: 1px solid #222;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 400;
+        }
+
+        .nav-btn:hover { color: var(--accent-gold); transform: translateY(-2px); }
+        .active-tab { color: var(--accent-gold); font-weight: 600; border-bottom: 2px solid var(--accent-gold); }
+
+        /* Main Layout Grid */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            max-width: 1200px;
+            margin: 40px auto;
+            gap: 30px;
+            padding: 0 20px;
+        }
+
+        .container { min-width: 0; }
+
+        .page {
+            display: none;
+            background-color: var(--card-bg);
+            padding: 50px;
+            border: 1px solid #30363d;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border-radius: 4px;
+        }
+
+        .page.active { display: block; animation: slideUp 0.6s ease; }
+
+        h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            color: var(--accent-gold);
+            margin-bottom: 30px;
+            font-weight: 700;
+        }
+
+        p {
+            margin-bottom: 20px;
+            color: var(--text-main);
+            font-weight: 300;
+        }
+
+        /* Evidence Buttons */
+        .evidence-btn {
+            background-color: var(--card-bg);
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .evidence-btn:hover {
+            background-color: var(--accent-gold);
+            color: var(--bg-color);
+        }
+
+        /* Interactive Element: Evidence Sidebar */
+        .sidebar {
+            background: #0d1117;
+            padding: 25px;
+            border-radius: 4px;
+            border: 1px dashed #333;
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+
+        .sidebar-title {
+            margin-top: 0;
+            font-family: 'Playfair Display', serif;
+            color: var(--accent-gold);
+            letter-spacing: 1px;
+        }
+
+        .clue-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+
+        .clue-item {
+            padding: 12px;
+            margin-bottom: 12px;
+            background: #1c2128;
+            border-left: 3px solid #444;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            border-radius: 2px;
+        }
+
+        .clue-item.found {
+            border-left-color: var(--accent-gold);
+            color: #fff;
+        }
+
+        /* Evidence Image Container */
+        .clue-visual-container {
+            margin-top: 10px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.8s ease-out, opacity 0.5s ease;
+            opacity: 0;
+        }
+
+        .clue-visual-container.found {
+            max-height: 150px; /* Expands to show image */
+            opacity: 1;
+        }
+
+        .clue-img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border: 1px solid #333;
+            filter: sepia(50%) contrast(120%);
+        }
+
+        /* Author Hover Card */
+        .author-img {
+            width: 100%;
+            max-width: 250px;
+            filter: grayscale(100%);
+            border: 1px solid var(--accent-gold);
+            padding: 5px;
+        }
+
+        .author-img:hover {
+            filter: grayscale(0%);
+            transform: scale(1.05) rotate(2deg);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 900px) {
+            .main-layout { grid-template-columns: 1fr; }
+            .sidebar { position: static; margin-top: 20px; }
+            header h1 { font-size: 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>This Is Our Story</h1>
+    <p style="color: var(--accent-gold); letter-spacing: 5px;">INTERACTIVE EVIDENCE ARCHIVE</p>
+</header>
+
+<nav id="mainNav">
+    <button class="nav-btn active-tab" onclick="showPage('author', this)">The Author</button>
+    <button class="nav-btn" onclick="showPage('summary', this)">Case Summary</button>
+    <button class="nav-btn" onclick="showPage('analysis1', this)">Investigation</button>
+    <button class="nav-btn" onclick="showPage('analysis2', this)">Socio-Economic</button>
+    <button class="nav-btn" onclick="showPage('cited', this)">Dossier</button>
+</nav>
+
+<div class="main-layout">
+    <div class="container">
+        <section id="author" class="page active">
+            <h2>The Architect of Suspense</h2>
+            <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                <img src="https://images.squarespace-cdn.com/content/v1/53026857e4b008d7e9309228/1563214588825-Z7M1Y8Y67U9LQX7D8O5Z/AshleyElston_Headshot.jpg" alt="Ashley Elston" class="author-img">
+                <div style="flex: 1; min-width: 250px;">
+                    <p>Ashley Elston is a prominent American author of suspenseful young adult fiction. Her unique professional background includes spending a decade as a wedding photographer. This specific experience sharpened her keen eye for composition, texture, and capturing overlooked details—skills that she has masterfully applied to the intricate plotting and atmospheric world-building found within her "whodunnit" mysteries.</p>
+                    <p>Celebrated for her innovative narrative structures, *This Is Our Story* utilizes multiple timelines and a chilling, anonymous "The Boy" perspective to keep readers perpetually off-balance. Her Louisiana roots frequently seep into her novels, establishing settings that are thick with Southern heat, swampy secrets, and upper-class social tension. Elston continues to be a defining voice in modern YA thrillers.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="summary" class="page">
+            <h2>Case Summary: River Point</h2>
+            <p>Five golden boys from wealthy, influential families go into the woods for a hunting trip, but by sunrise, only four return. Grant Perkins is dead, shot by a single bullet. The remaining four, the "River Point Five," refuse to speak, protected by high-priced lawyers and the political weight of their families, leaving the town of River Point to wonder: which one of them is a killer?</p>
+            <p>The story follows Kate Marino, a high school senior and intern for the District Attorney's office. Kate’s boss is determined to break the case, and Kate is tasked with cataloging evidence. However, Kate has personal connections to the boys that make the investigation dangerous. As she digs through forensic reports and text logs, the narrative reveals the hidden webs of lies and privilege that define the town, in a race to uncover the truth before the killer strikes again.</p>
+            <button onclick="unlockClue(0)" class="evidence-btn">Log Ballistic Evidence</button>
+        </section>
+
+        <section id="analysis1" class="page">
+            <h2>Investigation: Internal Conflict</h2>
+            <p>The novel masterfully utilizes structural narrative to drive internal conflict. By incorporating "The Boy" segments, Elston forces the reader into the unsettling psychological space of the killer without revealing their identity. This establishes a **Man vs. Self** conflict, as we witness the justification of a crime and the crushing paranoia that follows. The anonymous nature of these chapters leaves the reader questioning the morality and reliability of every single suspect.</p>
+            <p>For the protagonist, Kate, the conflict is one of professional duty versus social and personal risk. She must decide if finding the truth is worth destroying the lives of her peers and risking her own future in River Point. This internal struggle, balanced against the suspects’ attempts to maintain their "Code of Silence," drives the suspense and makes the final reveal feel both earned and tragic. The book is an analysis of how quickly loyalty can dissolve when accountability is introduced.</p>
+            <button onclick="unlockClue(1)" class="evidence-btn">Submit Anonymous Tip</button>
+        </section>
+
+        <section id="analysis2" class="page">
+            <h2>Analysis: Power & Privilege</h2>
+            <p>The novel explores **The Socio-Economic Connection to Justice**. The "River Point Five" are not just suspects; they are local royalty. Their identity as wealthy, white, influential young men grants them a shield that a working-class citizen would never receive. Elston illustrates how privilege can buy time, manipulate evidence, and delay the legal process. The novel serves as a diagram of systemic inequality, showcasing how the wealthy construct a separate set of rules for themselves.</p>
+            <p>Furthermore, the title *This Is Our Story* suggests that the "Truth" is a commodity that can be bought and controlled by those in power. Through the boys' defense and the public's reaction, Elston demonstrates that the loudest, most organized narrative often overrides the facts. The book challenges the reader to look past the carefully constructed facade of social reputation and recognize that when justice is for sale, the entire concept of morality becomes the first casualty.</p>
+            <button onclick="unlockClue(2)" class="evidence-btn">Unseal Final Report</button>
+        </section>
+
+        <section id="cited" class="page">
+            <h2>Official Dossier (Citations)</h2>
+            <p>Elston, Ashley. <em>This Is Our Story</em>. Disney-Hyperion, 2016.</p>
+            <p>“Biography: Ashley Elston.” <em>Ashley Elston Official Site</em>, www.ashleyelston.com/about. Accessed 15 May 2026.</p>
+            <p>Images sourced via Creative Commons (Unsplash) and Official Author Press Kit.</p>
+        </section>
+    </div>
+
+    <div class="sidebar">
+        <h3 class="sidebar-title">Case Progress</h3>
+        <p style="font-size: 0.7rem; color: var(--text-muted);">LOG EVIDENCE TO ADVANCE THE CASE</p>
+        
+        <ul class="clue-list">
+            <li id="clue0" class="clue-item">🔒 Evidence: Ballistics Analysis</li>
+            <li id="clue0-visual" class="clue-visual-container">
+                <img src="https://images.unsplash.com/photo-1596755490729-3f0f7015f5c3?q=80&w=400&auto=format&fit=crop" class="clue-img" alt="Rifle barrel">
+            </li>
+
+            <li id="clue1" class="clue-item">🔒 Evidence: Field Notes</li>
+            <li id="clue1-visual" class="clue-visual-container">
+                <img src="https://images.unsplash.com/photo-1587440871875-191322ee64b0?q=80&w=400&auto=format&fit=crop" class="clue-img" alt="Notebook and pen">
+            </li>
+
+            <li id="clue2" class="clue-item">🔒 Evidence: Final Transcript</li>
+            <li id="clue2-visual" class="clue-visual-container">
+                <img src="https://images.unsplash.com/photo-1614030424754-02d250dc2b8e?q=80&w=400&auto=format&fit=crop" class="clue-img" alt="Court transcript bundle">
+            </li>
+        </ul>
+    </div>
+</div>
+
+<footer>
+    <p>ELA ANTHOLOGY PROJECT | 2026 | MEDINA HIGH SCHOOL</p>
+</footer>
+
+<script>
+    /* JavaScript for Page Switching */
+    function showPage(pageId, btnElement) {
+        // Hide all pages and remove tab states
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-tab'));
+        
+        // Show active page and set active tab state
+        document.getElementById(pageId).classList.add('active');
+        btnElement.classList.add('active-tab');
+        
+        // Smooth scroll to content top
+        window.scrollTo({ top: 380, behavior: 'smooth' });
+    }
+
+    /* JavaScript for unlocking Clues and Visuals */
+    function unlockClue(index) {
+        // Text updates for the clues
+        const clues = ["🔓 Logged: The Hunting Weapon", "🔓 Received: Critical Testimony", "🔓 Logged: The Forensic Conclusion"];
+        
+        // Update the list text and state
+        const element = document.getElementById('clue' + index);
+        element.innerText = clues[index];
+        element.classList.add('found');
+        
+        // Update the image container state to make it expand and fade in
+        const visualElement = document.getElementById('clue' + index + '-visual');
+        visualElement.classList.add('found');
+        
+        // Play subtle unlock feedback
+        console.log(`Clue ${index} unlocked.`);
+    }
+</script>
+
+</body>
+</html>
